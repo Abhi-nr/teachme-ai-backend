@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TeachMe AI</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #e0f2fe, #fff);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 2em;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2563eb;
+    }
+
+    .chat-box {
+      flex: 1;
+      background: #fff;
+      padding: 1em;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      overflow-y: auto;
+      max-height: 500px;
+      margin-bottom: 1em;
+    }
+
+    .message {
+      margin: 0.5em 0;
+      max-width: 80%;
+      padding: 0.6em 1em;
+      border-radius: 10px;
+      line-height: 1.4;
+      font-size: 14px;
+    }
+
+    .user {
+      background: #dbeafe;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .ai {
+      background: #f3f4f6;
+      margin-right: auto;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 0.5em;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button.voice {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎓 Dumb and Dumber AI</h1>
+    <div class="chat-box" id="chat"></div>
+
+    <div class="input-area">
+      <input id="userInput" type="text" placeholder="Type your message. or can speak.." />
+      <button onclick="sendMessage()">Send</button>
+    <button class="voice" onclick="startListening()">🎤</button>
+    <button class="voice" onclick="cancelListening()">❌</button>
+    </div>
+  </div>
+
+ <script>
+  const chatBox = document.getElementById('chat');
+  const userInput = document.getElementById('userInput');
+  const sessionId = Date.now().toString();
+  let concept = "";
+
+  function addMessage(from, text) {
+    const msg = document.createElement('div');
+    msg.className = 'message ' + (from === 'user' ? 'user' : 'ai');
+    msg.innerHTML = `<strong>${from === 'user' ? 'You' : 'AI'}:</strong> ${text}`;
+    chatBox.appendChild(msg);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function sendMessage() {
+    const message = userInput.value.trim();
+    if (!message) return;
+
+    addMessage('user', message);
+    userInput.value = '';
+    if (recognition && isListening) {
+    recognition.stop();        // ✅ Stop mic so it doesn’t keep listening
+    isListening = false;
+  }
+
+    if (chatBox.children.length === 1) concept = message;
+
+    fetch('http://localhost:3001/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, userMessage: message, concept })
+    })
+    .then(res => res.json())
+    .then(data => addMessage('ai', data.aiMessage))
+    .catch(() => addMessage('ai', "Oops! Couldn't reach the AI."));
+  }
+
+  // ✅ NEW MIC CODE: Add this below sendMessage()
+  let recognition;
+  let isListening = false;
+
+  function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Speech Recognition not supported");
+
+    if (isListening) return;
+
+    recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    recognition.onstart = () => {
+      isListening = true;
+      userInput.value = "";
+      console.log("🎙️ Listening...");
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map(result => result[0].transcript)
+        .join("");
+      userInput.value = transcript;
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech error:", event.error);
+      stopListening();
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      console.log("🛑 Mic stopped");
+    };
+
+    recognition.start();
+  }
+
+  function cancelListening() {
+    if (recognition && isListening) {
+      recognition.stop();
+      isListening = false;
+      userInput.value = "";
+    }
+  }
+</script>
+
+
+</body>
+</html>
