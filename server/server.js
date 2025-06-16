@@ -29,7 +29,7 @@ app.post("/api/chat", async (req, res) => {
     });
 
     responseText = completion.choices[0].message.content?.trim() || "";
-    console.log("✅ AI:", responseText);
+    console.log("AI:", responseText);
   } catch (error) {
     console.error("🔥 OpenRouter Error:", error.response?.data || error.message || error);
     responseText = "Sorry, the AI had a thinking problem!";
@@ -38,4 +38,4 @@ app.post("/api/chat", async (req, res) => {
   res.json({ aiMessage: responseText });
 });
 
-app.listen(3001, () => console.log("🚀 Server running on http://localhost:3001"));
+app.listen(3001, () => console.log("Server running on http://localhost:3001"));

@@ -18,7 +18,7 @@ const App = () => {
     setInput("");
 
     try {
-      const res = await axios.post("http://localhost:3001/api/chat", {
+      const res = await axios.post("https://dumb-and-dumber.onrender.com/api/chat", {
         sessionId,
         userMessage: message,
         concept: newConcept
